@@ -20,7 +20,7 @@ Abre el README y explica este mapa:
 | `config/` | Configuración y rutas de Django. |
 | `payments/migrations/` | Cambios versionados de la estructura de PostgreSQL. |
 | `.github/workflows/` | Comprobación automática en cada push y PR. |
-| `Dockerfile`, `compose.yaml`, `.env.example` | Instalación reproducible y configuración de ejemplo sin secretos reales. |
+| `requirements.txt`, `.env.example` | Dependencias declaradas y configuración de ejemplo sin secretos reales. |
 
 ## Minutos 4–6: historial y rama
 
