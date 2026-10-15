@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Ingresar{% endblock %}
+{% block content %}
+<section class="login-card panel">
+  <p class="eyebrow">REGISTRO DE PAGOS</p>
+  <h1>Bienvenida, Celia</h1>
+  <p class="muted">Ingresa para revisar los pagos del minimarket.</p>
+  {% if form.errors %}<p class="form-error" role="alert">Usuario o contraseña incorrectos.</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="field"><label for="id_username">Usuario</label><input id="id_username" name="username" autocomplete="username" required autofocus></div>
+    <div class="field"><label for="id_password">Contraseña</label><input id="id_password" name="password" type="password" autocomplete="current-password" required></div>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="button button-primary full-width" type="submit">Ingresar</button>
+  </form>
+</section>
+{% endblock %}
