@@ -8,6 +8,8 @@ Celia administra un minimarket. Hoy apunta en un cuaderno el nombre del cliente,
 
 El objetivo es que Celia pueda registrar 20 pagos, encontrar cualquiera por nombre o fecha en menos de 30 segundos y consultar el total diario sin sumarlo a mano. La verificación sigue siendo manual en Yape.
 
+**Estado de P1:** el repositorio ya contiene un prototipo funcional adelantado respecto a la entrega que pide la primera función en P3. En P1 el foco de la revisión es el uso de Git y GitHub, la documentación, el PR y la CI. Las instrucciones para ejecutar lo que existe están abajo.
+
 ## Funciones de la primera versión
 
 - Registrar cliente, monto en soles y fecha del pago.
