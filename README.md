@@ -35,14 +35,18 @@ CREATE ROLE yaperegistro LOGIN CREATEDB PASSWORD 'local-development-only-change-
 CREATE DATABASE yaperegistro OWNER yaperegistro;
 ```
 
-`CREATEDB` permite que el ejecutor de pruebas cree una base temporal. La contraseña del ejemplo es solo para desarrollo local; si la cambias, cambia también `DATABASE_URL` en `.env`. Después de copiar `.env.example`, reemplaza `DJANGO_SECRET_KEY` por un valor propio antes de cargar `.env`.
+`CREATEDB` permite que el ejecutor de pruebas cree una base temporal. La contraseña del ejemplo es solo para desarrollo local; si la cambias, cambia también `DATABASE_URL` en `.env`.
 
 ```sh
 python3.14 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Edita DJANGO_SECRET_KEY en .env antes de continuar.
+```
+
+Abre `.env` y reemplaza `DJANGO_SECRET_KEY` por un valor propio. Luego carga la configuración y arranca la aplicación:
+
+```sh
 set -a
 . ./.env
 set +a
