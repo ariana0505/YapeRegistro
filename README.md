@@ -8,6 +8,11 @@ Celia administra un minimarket. Hoy apunta en un cuaderno el nombre del cliente,
 
 El objetivo es que Celia pueda registrar 20 pagos, encontrar cualquiera por nombre o fecha en menos de 30 segundos y consultar el total diario sin sumarlo a mano. La verificación sigue siendo manual en Yape.
 
+**Estado de P1:** el repositorio ya contiene un prototipo funcional adelantado respecto a la entrega que pide la primera función en P3. En P1 el foco de la revisión es el uso de Git y GitHub, la documentación, el PR y la CI. Las instrucciones para ejecutar lo que existe están abajo.
+
+Para la exposición, consulta el [guion de P1](docs/P1-presentacion.md).
+Las tres ideas iniciales, la elección del producto y los retos de aprendizaje están en el [charter de P1](docs/P1-charter.md). La aprobación de la idea aún debe registrarse allí.
+
 ## Funciones de la primera versión
 
 - Registrar cliente, monto en soles y fecha del pago.
@@ -22,35 +27,69 @@ Un pago *verificado* significa que Celia encontró el movimiento correspondiente
 
 Navegador del celular o computadora → Django (páginas HTML) → PostgreSQL. Los pagos y las sesiones se guardan en PostgreSQL. El proceso web puede reiniciarse sin perderlos. No hay caché ni cola de trabajos en esta versión.
 
-## Ejecutar en desarrollo con Docker
+## Ejecutar en desarrollo
 
-Requiere Docker y Docker Compose.
+### Ver la interfaz sin cuenta
 
-1. Copia el archivo de ejemplo: `cp .env.example .env`.
-2. Cambia `DJANGO_SECRET_KEY` y `POSTGRES_PASSWORD` en `.env`; actualiza también la contraseña dentro de `DATABASE_URL` para que coincida. Los valores del ejemplo son solo locales.
-3. Ejecuta `docker compose up -d db`.
-4. Aplica las migraciones con `docker compose run --rm web python manage.py migrate`.
-5. Crea la cuenta de Celia con `docker compose run --rm web python manage.py createsuperuser`. Elige un usuario y una contraseña fuerte; esta cuenta también puede entrar a `/admin/`.
-6. Inicia la web: `docker compose up -d --build web`.
-7. Abre `http://localhost:8000/` e ingresa con la cuenta creada.
+Para abrir una vista local con pagos de ejemplo, sin crear usuario ni instalar PostgreSQL:
 
-Para revisar los eventos: `docker compose logs -f web`. Para detener los procesos: `docker compose down`. **No uses `docker compose down -v` si quieres conservar los pagos**, porque elimina el volumen de PostgreSQL.
+```sh
+git clone https://github.com/ariana0505/YapeRegistro.git
+cd YapeRegistro
+python3.14 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+DJANGO_DEMO_MODE=true python manage.py runserver
+```
+
+Abre `http://localhost:8000/`. Puedes probar los filtros; los pagos de ejemplo no se guardan. Para detener el servidor, pulsa `Ctrl+C`. Este comando inicia el servidor solo en tu computadora y no permite registrar ni modificar pagos. Si Django avisa de migraciones pendientes, puedes ignorar ese aviso en la vista previa.
+
+### Usar la aplicación con datos reales
+
+Requiere Python 3.14 y PostgreSQL en ejecución. En una sesión de `psql` con una cuenta administradora, crea una cuenta y una base para la aplicación:
+
+```sql
+CREATE ROLE yaperegistro LOGIN CREATEDB PASSWORD 'local-development-only-change-me';
+CREATE DATABASE yaperegistro OWNER yaperegistro;
+```
+
+`CREATEDB` permite que el ejecutor de pruebas cree una base temporal. La contraseña del ejemplo es solo para desarrollo local; si la cambias, cambia también `DATABASE_URL` en `.env`.
+
+```sh
+python3.14 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Abre `.env` y reemplaza `DJANGO_SECRET_KEY` por un valor propio. Luego carga la configuración y arranca la aplicación:
+
+```sh
+set -a
+. ./.env
+set +a
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Abre `http://localhost:8000/` e ingresa con la cuenta creada. Esta cuenta también puede entrar a `/admin/`. Para detener la web, pulsa `Ctrl+C`; los pagos seguirán en PostgreSQL. En otra sesión de terminal, activa `.venv` y carga `.env` otra vez antes de ejecutar comandos de Django. `.env` está excluido de Git.
 
 ## Pruebas y mantenimiento
 
-Con los servicios de Docker disponibles:
+Con PostgreSQL en ejecución y el entorno virtual y `.env` cargados:
 
 ```sh
-docker compose run --rm web python manage.py check
-docker compose run --rm web python manage.py makemigrations --check --dry-run
-docker compose run --rm web python manage.py test
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
 ```
 
 Cuando cambie el modelo de datos, crea la migración en desarrollo con `python manage.py makemigrations` y guárdala en Git. Antes de iniciar una versión nueva, ejecuta `python manage.py migrate` como tarea puntual con la configuración del despliegue. El flujo de GitHub Actions ejecuta comprobaciones y pruebas con PostgreSQL.
 
 ## Preparar un despliegue
 
-La imagen Docker construye el código, instala las dependencias y prepara los archivos estáticos. Al ejecutar la imagen, proporciona `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_URL` y `PORT`; usa `DJANGO_DEBUG=false`. La aplicación exige HTTPS cuando `DEBUG` está desactivado. Configura `DJANGO_CSRF_TRUSTED_ORIGINS` con el origen público completo, por ejemplo `https://pagos.ejemplo.com`. Si está detrás de un proxy que reemplaza el encabezado `X-Forwarded-Proto`, configura `DJANGO_TRUST_PROXY=true`. PostgreSQL debe ser un servicio persistente externo al contenedor web y tener copias de seguridad. Ejecuta las migraciones como proceso puntual antes de iniciar la versión nueva. El servidor Gunicorn escucha en `PORT` y escribe logs en la salida estándar.
+Para construir una versión, instala las dependencias de `requirements.txt` en un entorno aislado y ejecuta `python manage.py collectstatic --noinput`. En el despliegue, proporciona `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_URL` y `PORT`; usa `DJANGO_DEBUG=false`. La aplicación exige HTTPS cuando `DEBUG` está desactivado. Configura `DJANGO_CSRF_TRUSTED_ORIGINS` con el origen público completo, por ejemplo `https://pagos.ejemplo.com`. Si está detrás de un proxy que reemplaza el encabezado `X-Forwarded-Proto`, configura `DJANGO_TRUST_PROXY=true`. PostgreSQL debe ser un servicio persistente separado de los procesos web y tener copias de seguridad. Ejecuta `python manage.py migrate` como proceso puntual antes de iniciar la versión nueva. Inicia la web con `gunicorn config.wsgi:application --bind "0.0.0.0:${PORT:-8000}" --workers 2 --access-logfile - --error-logfile - --graceful-timeout 30`; los logs salen por la salida estándar.
 
 Todavía no se ha elegido proveedor de alojamiento ni se ha realizado un despliegue público. Antes de publicar, hay que definir dominio, HTTPS, copias de seguridad, presupuesto y política de acceso. No cargues datos reales hasta tenerlos resueltos.
 
@@ -62,7 +101,7 @@ Todavía no se ha elegido proveedor de alojamiento ni se ha realizado un desplie
 | II. Dependencias | Versiones declaradas en `requirements.txt` e instaladas en un entorno aislado. |
 | III. Configuración | Valores de despliegue en variables de entorno; `.env` excluido de Git. |
 | IV. Servicios externos | PostgreSQL conectado mediante `DATABASE_URL`. |
-| V. Construir, desplegar, ejecutar | Docker construye una imagen; configuración y migraciones se aplican por separado. |
+| V. Construir, desplegar, ejecutar | Dependencias y archivos estáticos se preparan antes; configuración, migraciones y ejecución se aplican por separado. |
 | VI. Procesos | El proceso web no guarda pagos en memoria ni en su disco. |
 | VII. Puertos | Gunicorn escucha en `PORT`. |
 | VIII. Concurrencia | Gunicorn usa dos trabajadores; pueden añadirse instancias web con la misma base. |
