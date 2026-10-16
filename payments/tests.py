@@ -16,7 +16,7 @@ class PaymentFlowTests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    def test_create_then_verify_and_return_to_pending(self):
+    def test_create_then_set_status_idempotently(self):
         response = self.client.post(reverse("payment-create"), {
             "customer_name": "  Ana   Torres  ", "amount": "12.50", "paid_on": "2026-10-14",
         })
@@ -26,12 +26,22 @@ class PaymentFlowTests(TestCase):
         self.assertEqual(payment.amount, Decimal("12.50"))
         self.assertEqual(payment.status, Payment.Status.PENDING)
 
-        url = reverse("payment-toggle", args=[payment.pk])
+        url = reverse("payment-status", args=[payment.pk])
         self.assertEqual(self.client.get(url).status_code, 405)
-        self.client.post(url)
+        self.client.post(url, {"status": Payment.Status.VERIFIED})
         payment.refresh_from_db()
         self.assertEqual(payment.status, Payment.Status.VERIFIED)
-        self.client.post(url)
+        self.client.post(url, {"status": Payment.Status.VERIFIED})
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.VERIFIED)
+        self.client.post(url, {"status": Payment.Status.PENDING})
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.PENDING)
+
+    def test_rejects_invalid_status(self):
+        payment = Payment.objects.create(customer_name="Ana", amount="12.50", paid_on=date(2026, 10, 14))
+        response = self.client.post(reverse("payment-status", args=[payment.pk]), {"status": "unknown"})
+        self.assertEqual(response.status_code, 400)
         payment.refresh_from_db()
         self.assertEqual(payment.status, Payment.Status.PENDING)
 
@@ -59,6 +69,19 @@ class PaymentFlowTests(TestCase):
         self.assertEqual(len(response.context["payments"]), 2)
         self.assertEqual(response.context["verified_total"], Decimal("15.30"))
         self.assertEqual(response.context["pending_total"], Decimal("3.30"))
+
+    def test_invalid_filters_do_not_show_unfiltered_payments(self):
+        Payment.objects.create(customer_name="Ana", amount="10.00", paid_on=date(2026, 10, 14))
+        url = reverse("payment-list")
+        for query, field in [
+            ({"name": "Ana", "day": "invalid"}, "day"),
+            ({"name": "A" * 121, "day": "2026-10-14"}, "name"),
+        ]:
+            with self.subTest(field=field):
+                response = self.client.get(url, query)
+                self.assertEqual(len(response.context["payments"]), 0)
+                self.assertContains(response, response.context["filters"].errors[field][0])
+                self.assertContains(response, "Corrige los filtros para buscar pagos.")
 
     def test_requires_login(self):
         self.client.logout()

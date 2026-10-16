@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseBadRequest, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -18,20 +18,22 @@ logger = logging.getLogger(__name__)
 def payment_list(request):
     filters = PaymentFilterForm(request.GET)
     payments = Payment.objects.all()
-    if filters.is_valid():
+    filters_valid = filters.is_valid()
+    day = filters.cleaned_data.get("day")
+    if filters_valid:
         name = filters.cleaned_data["name"].strip()
-        day = filters.cleaned_data["day"]
         if name:
             payments = payments.filter(customer_name__icontains=name)
         if day:
             payments = payments.filter(paid_on=day)
     else:
-        day = None
+        payments = Payment.objects.none()
     summary_day = day or timezone.localdate()
     summary = Payment.objects.filter(paid_on=summary_day).values("status").annotate(total=Sum("amount"))
     totals = {item["status"]: item["total"] for item in summary}
     return render(request, "payments/list.html", {
         "filters": filters,
+        "filters_valid": filters_valid,
         "payments": payments,
         "summary_day": summary_day,
         "verified_total": totals.get(Payment.Status.VERIFIED, Decimal("0.00")),
@@ -63,12 +65,18 @@ def payment_edit(request, pk):
 
 
 @login_required
-def payment_toggle(request, pk):
+def payment_set_status(request, pk):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
+    desired_status = request.POST.get("status")
+    if desired_status not in Payment.Status.values:
+        return HttpResponseBadRequest("Estado de pago inválido.")
     payment = get_object_or_404(Payment, pk=pk)
-    payment.status = Payment.Status.PENDING if payment.status == Payment.Status.VERIFIED else Payment.Status.VERIFIED
-    payment.save(update_fields=["status", "updated_at"])
-    logger.info("payment_status_changed id=%s status=%s", payment.pk, payment.status)
-    messages.success(request, "Estado del pago actualizado.")
+    if payment.status != desired_status:
+        payment.status = desired_status
+        payment.save(update_fields=["status", "updated_at"])
+        logger.info("payment_status_changed id=%s status=%s", payment.pk, payment.status)
+        messages.success(request, "Estado del pago actualizado.")
+    else:
+        messages.info(request, "El pago ya tenía ese estado.")
     return redirect("payment-list")
