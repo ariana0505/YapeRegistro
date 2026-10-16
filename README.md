@@ -11,6 +11,7 @@ El objetivo es que Celia pueda registrar 20 pagos, encontrar cualquiera por nomb
 **Estado de P1:** el repositorio ya contiene un prototipo funcional adelantado respecto a la entrega que pide la primera función en P3. En P1 el foco de la revisión es el uso de Git y GitHub, la documentación, el PR y la CI. Las instrucciones para ejecutar lo que existe están abajo.
 
 Para la exposición, consulta el [guion de P1](docs/P1-presentacion.md).
+Las tres ideas iniciales, la elección del producto y los retos de aprendizaje están en el [charter de P1](docs/P1-charter.md). La aprobación de la idea aún debe registrarse allí.
 
 ## Funciones de la primera versión
 

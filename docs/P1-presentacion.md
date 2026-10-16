@@ -8,6 +8,7 @@ Este guion sirve para practicar. Explica cada decisión con tus propias palabras
 - Después compara a mano las anotaciones con los movimientos de Yape.
 - El objetivo es encontrar pagos por nombre o fecha y conocer un total diario. La app no confirma pagos automáticamente.
 - Aclara que el prototipo funcional ya está en el repositorio, aunque P1 evalúa sobre todo el flujo con Git y GitHub.
+- Muestra el [charter inicial](P1-charter.md): tres propuestas, la elección del registro de pagos, su criterio de éxito y las tres dificultades técnicas identificadas al comenzar. No presentes la elección como aprobada hasta tener la constancia de aprobación.
 
 ## Minutos 2–4: repositorio y carpetas
 
