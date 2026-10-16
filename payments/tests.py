@@ -42,6 +42,13 @@ class PaymentFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Payment.objects.count(), 0)
 
+    def test_accepts_minimum_amount(self):
+        response = self.client.post(reverse("payment-create"), {
+            "customer_name": "Ana", "amount": "0.01", "paid_on": "2026-10-14",
+        })
+        self.assertRedirects(response, reverse("payment-list"))
+        self.assertEqual(Payment.objects.get().amount, Decimal("0.01"))
+
     def test_search_date_and_totals_do_not_mix_days_or_statuses(self):
         Payment.objects.create(customer_name="Ana", amount="10.10", paid_on=date(2026, 10, 14), status=Payment.Status.VERIFIED)
         Payment.objects.create(customer_name="ANA María", amount="5.20", paid_on=date(2026, 10, 14), status=Payment.Status.VERIFIED)
