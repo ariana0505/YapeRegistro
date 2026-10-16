@@ -29,6 +29,23 @@ Navegador del celular o computadora → Django (páginas HTML) → PostgreSQL. L
 
 ## Ejecutar en desarrollo
 
+### Ver la interfaz sin cuenta
+
+Para abrir una vista local con pagos de ejemplo, sin crear usuario ni instalar PostgreSQL:
+
+```sh
+git clone https://github.com/ariana0505/YapeRegistro.git
+cd YapeRegistro
+python3.14 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+DJANGO_DEMO_MODE=true python manage.py runserver
+```
+
+Abre `http://localhost:8000/`. Puedes probar los filtros; los pagos de ejemplo no se guardan. Para detener el servidor, pulsa `Ctrl+C`. Este comando inicia el servidor solo en tu computadora y no permite registrar ni modificar pagos. Si Django avisa de migraciones pendientes, puedes ignorar ese aviso en la vista previa.
+
+### Usar la aplicación con datos reales
+
 Requiere Python 3.14 y PostgreSQL en ejecución. En una sesión de `psql` con una cuenta administradora, crea una cuenta y una base para la aplicación:
 
 ```sql

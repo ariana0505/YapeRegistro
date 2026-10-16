@@ -231,6 +231,9 @@ h2 {
   border-top:1px solid #edf0ed;
   padding:16px 0
 }
+.demo-list .payment-row {
+  grid-template-columns:minmax(150px,1fr) 110px 115px
+}
 .payment-main {
   display:flex;
   flex-direction:column;
@@ -293,6 +296,9 @@ h2 {
   color:#1b6546;
   font-size:14px
 }
+.demo-notice {
+  margin:-8px 0 22px
+}
 .form-page {
   max-width:560px;
   margin:36px auto
@@ -353,6 +359,9 @@ h2 {
 .payment-row {
   grid-template-columns:1fr auto;
   gap:9px 12px
+}
+.demo-list .payment-row {
+  grid-template-columns:1fr auto
 }
 .status {
   justify-self:start

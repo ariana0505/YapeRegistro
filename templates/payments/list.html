@@ -3,8 +3,11 @@
 {% block content %}
 <section class="page-heading">
   <div><p class="eyebrow">CONTROL DIARIO</p><h1>Registro de pagos</h1><p class="muted">Anota cada pago y compáralo con tus movimientos de Yape.</p></div>
+  {% if not demo_mode %}
   <a class="button button-primary" href="{% url 'payment-create' %}">+ Registrar pago</a>
+  {% endif %}
 </section>
+{% if demo_mode %}<p class="message demo-notice">Vista de demostración: los pagos mostrados son ejemplos y no se guardan datos.</p>{% endif %}
 
 <section aria-label="Totales del día" class="summary-grid">
   <div class="summary-card verified"><span>Verificado · {{ summary_day|date:"d/m/Y" }}</span><strong>S/ {{ verified_total|floatformat:2 }}</strong><small>Pagos comprobados en Yape</small></div>
@@ -24,16 +27,16 @@
 <section class="panel list-panel" aria-labelledby="list-title">
   <div class="section-heading"><h2 id="list-title">Pagos registrados</h2><span class="muted">{{ payments|length }} resultado{{ payments|length|pluralize }}</span></div>
   {% if payments %}
-  <div class="payment-list">
+  <div class="payment-list{% if demo_mode %} demo-list{% endif %}">
     {% for payment in payments %}
     <article class="payment-row">
       <div class="payment-main"><strong>{{ payment.customer_name }}</strong><span>{{ payment.paid_on|date:"d/m/Y" }} · Registro #{{ payment.pk }}</span></div>
       <strong class="amount">S/ {{ payment.amount|floatformat:2 }}</strong>
       <span class="status status-{{ payment.status }}">{{ payment.get_status_display }}</span>
-      <div class="row-actions">
+      {% if not demo_mode %}<div class="row-actions">
         <a href="{% url 'payment-edit' payment.pk %}">Corregir</a>
         <form method="post" action="{% url 'payment-status' payment.pk %}">{% csrf_token %}<input type="hidden" name="status" value="{% if payment.status == 'pending' %}verified{% else %}pending{% endif %}"><button type="submit">{% if payment.status == 'pending' %}Verificar{% else %}Volver a pendiente{% endif %}</button></form>
-      </div>
+      </div>{% endif %}
     </article>
     {% endfor %}
   </div>
