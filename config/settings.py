@@ -19,7 +19,7 @@ def required_env(name):
 DEMO_MODE = os.environ.get("DJANGO_DEMO_MODE", "false").lower() == "true"
 SECRET_KEY = "local-preview-only-not-for-real-data" if DEMO_MODE else required_env("DJANGO_SECRET_KEY")
 DEBUG = DEMO_MODE or os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"] if DEMO_MODE else [
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".vercel.app"] if DEMO_MODE else [
     host.strip() for host in required_env("DJANGO_ALLOWED_HOSTS").split(",") if host.strip()
 ]
 CSRF_TRUSTED_ORIGINS = [
