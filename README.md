@@ -8,10 +8,7 @@ Celia administra un minimarket. Hoy apunta en un cuaderno el nombre del cliente,
 
 El objetivo es que Celia pueda registrar 20 pagos, encontrar cualquiera por nombre o fecha en menos de 30 segundos y consultar el total diario sin sumarlo a mano. La verificación sigue siendo manual en Yape.
 
-**Estado de P1:** el repositorio ya contiene un prototipo funcional adelantado respecto a la entrega que pide la primera función en P3. En P1 el foco de la revisión es el uso de Git y GitHub, la documentación, el PR y la CI. Las instrucciones para ejecutar lo que existe están abajo.
-
-Para la exposición, consulta el [guion de P1](docs/P1-presentacion.md).
-Las tres ideas iniciales, la elección del producto y los retos de aprendizaje están en el [charter de P1](docs/P1-charter.md). La aprobación de la idea aún debe registrarse allí.
+La idea aprobada y su alcance están en el [charter del producto](docs/P1-charter.md). Para P1, revisa la rama `inicio-producto`, el PR con revisión propia y la CI en verde.
 
 ## Funciones de la primera versión
 
@@ -86,28 +83,3 @@ python manage.py test
 ```
 
 Cuando cambie el modelo de datos, crea la migración en desarrollo con `python manage.py makemigrations` y guárdala en Git. Antes de iniciar una versión nueva, ejecuta `python manage.py migrate` como tarea puntual con la configuración del despliegue. El flujo de GitHub Actions ejecuta comprobaciones y pruebas con PostgreSQL.
-
-## Preparar un despliegue
-
-Para construir una versión, instala las dependencias de `requirements.txt` en un entorno aislado y ejecuta `python manage.py collectstatic --noinput`. En el despliegue, proporciona `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_URL` y `PORT`; usa `DJANGO_DEBUG=false`. La aplicación exige HTTPS cuando `DEBUG` está desactivado. Configura `DJANGO_CSRF_TRUSTED_ORIGINS` con el origen público completo, por ejemplo `https://pagos.ejemplo.com`. Si está detrás de un proxy que reemplaza el encabezado `X-Forwarded-Proto`, configura `DJANGO_TRUST_PROXY=true`. PostgreSQL debe ser un servicio persistente separado de los procesos web y tener copias de seguridad. Ejecuta `python manage.py migrate` como proceso puntual antes de iniciar la versión nueva. Inicia la web con `gunicorn config.wsgi:application --bind "0.0.0.0:${PORT:-8000}" --workers 2 --access-logfile - --error-logfile - --graceful-timeout 30`; los logs salen por la salida estándar.
-
-Todavía no se ha elegido proveedor de alojamiento ni se ha realizado un despliegue público. Antes de publicar, hay que definir dominio, HTTPS, copias de seguridad, presupuesto y política de acceso. No cargues datos reales hasta tenerlos resueltos.
-
-## Twelve-Factor App
-
-| Factor | Estado en este proyecto |
-| --- | --- |
-| I. Código base | Código preparado para Git y varios despliegues desde el mismo repositorio. |
-| II. Dependencias | Versiones declaradas en `requirements.txt` e instaladas en un entorno aislado. |
-| III. Configuración | Valores de despliegue en variables de entorno; `.env` excluido de Git. |
-| IV. Servicios externos | PostgreSQL conectado mediante `DATABASE_URL`. |
-| V. Construir, desplegar, ejecutar | Dependencias y archivos estáticos se preparan antes; configuración, migraciones y ejecución se aplican por separado. |
-| VI. Procesos | El proceso web no guarda pagos en memoria ni en su disco. |
-| VII. Puertos | Gunicorn escucha en `PORT`. |
-| VIII. Concurrencia | Gunicorn usa dos trabajadores; pueden añadirse instancias web con la misma base. |
-| IX. Desechabilidad | Inicio sin tareas largas; Gunicorn permite apagado gradual de peticiones. |
-| X. Paridad | Desarrollo y CI usan PostgreSQL; producción debe usarlo también. |
-| XI. Logs | Eventos de la app y accesos web salen por consola. |
-| XII. Administración | Migraciones, pruebas y creación de la cuenta se ejecutan como procesos puntuales. |
-
-Pendiente para operar en producción: elegir alojamiento y configurar HTTPS, copias de seguridad y monitoreo. Una futura importación de reportes de Yape requeriría primero obtener un archivo de ejemplo y verificar su formato.
