@@ -4,21 +4,7 @@ on:
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: yaperegistro
-          POSTGRES_USER: yaperegistro
-          POSTGRES_PASSWORD: ci-only-password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U yaperegistro -d yaperegistro"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    runs-on: ubuntu-24.04
     env:
       DJANGO_SECRET_KEY: ci-only-non-production-key
       DJANGO_DEBUG: 'true'
@@ -26,6 +12,11 @@ jobs:
       DATABASE_URL: postgresql://yaperegistro:ci-only-password@127.0.0.1:5432/yaperegistro
     steps:
       - uses: actions/checkout@v7
+      - name: Iniciar PostgreSQL local del runner
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "CREATE ROLE yaperegistro LOGIN CREATEDB PASSWORD 'ci-only-password';"
+          sudo -u postgres createdb -O yaperegistro yaperegistro
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'

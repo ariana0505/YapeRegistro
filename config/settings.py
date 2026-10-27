@@ -16,31 +16,37 @@ def required_env(name):
     return value
 
 
-SECRET_KEY = required_env("DJANGO_SECRET_KEY")
-DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
-ALLOWED_HOSTS = [host.strip() for host in required_env("DJANGO_ALLOWED_HOSTS").split(",") if host.strip()]
+DEMO_MODE = os.environ.get("DJANGO_DEMO_MODE", "false").lower() == "true"
+SECRET_KEY = "local-preview-only-not-for-real-data" if DEMO_MODE else required_env("DJANGO_SECRET_KEY")
+DEBUG = DEMO_MODE or os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".vercel.app"] if DEMO_MODE else [
+    host.strip() for host in required_env("DJANGO_ALLOWED_HOSTS").split(",") if host.strip()
+]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()
 ]
 
-database_url = urlparse(required_env("DATABASE_URL"))
-database_params = parse_qs(database_url.query)
-database_host = database_params.get("host", [database_url.hostname])[0]
-if database_url.scheme not in ("postgres", "postgresql") or not database_host or not database_url.path.strip("/"):
-    raise ImproperlyConfigured("DATABASE_URL must be a PostgreSQL URL with a host and database name.")
+if DEMO_MODE:
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
+else:
+    database_url = urlparse(required_env("DATABASE_URL"))
+    database_params = parse_qs(database_url.query)
+    database_host = database_params.get("host", [database_url.hostname])[0]
+    if database_url.scheme not in ("postgres", "postgresql") or not database_host or not database_url.path.strip("/"):
+        raise ImproperlyConfigured("DATABASE_URL must be a PostgreSQL URL with a host and database name.")
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": unquote(database_url.path.lstrip("/")),
-        "USER": unquote(database_url.username or ""),
-        "PASSWORD": unquote(database_url.password or ""),
-        "HOST": database_host,
-        "PORT": database_params.get("port", [database_url.port or 5432])[0],
-        "CONN_MAX_AGE": 60,
-        "OPTIONS": {"sslmode": database_params["sslmode"][0]} if "sslmode" in database_params else {},
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": unquote(database_url.path.lstrip("/")),
+            "USER": unquote(database_url.username or ""),
+            "PASSWORD": unquote(database_url.password or ""),
+            "HOST": database_host,
+            "PORT": database_params.get("port", [database_url.port or 5432])[0],
+            "CONN_MAX_AGE": 60,
+            "OPTIONS": {"sslmode": database_params["sslmode"][0]} if "sslmode" in database_params else {},
+        }
     }
-}
 
 INSTALLED_APPS = [
     "django.contrib.admin",
